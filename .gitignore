@@ -1,0 +1,281 @@
+# Nexa Mind
+
+A multimodal AI vision-and-retrieval assistant built with FastAPI and Next.js. The project combines computer vision, retrieval, memory, web search, and grounded LLM reasoning in a practical student-scale architecture.
+
+## Core concept
+
+Nexa Mind perceives the real world through camera or uploaded images, identifies relevant objects or scenes, and answers user questions with grounded context from the image, internal documents, and web sources.
+
+## Architecture overview
+
+- Frontend: Next.js dashboard with camera preview, image upload, chat, and source panel
+- Backend: FastAPI REST API with auth, chat orchestration, document ingestion, and retrieval
+- AI stack: multimodal image understanding, embeddings, vector search, memory, and retrieval augmentation
+- Data layer: SQLite for lightweight prototype, ready to upgrade to PostgreSQL
+
+## Phase plan
+
+1. Basic frontend and backend shell
+2. Image upload and camera input
+3. Vision-based object understanding
+4. Conversational interaction
+5. RAG and vector retrieval
+6. Web retrieval
+7. Memory management
+8. Orchestration and tool usage
+9. Auth, persistence, logging, and error handling
+10. Optimization, testing, and deployment
+
+## Folder structure
+
+```text
+nexa-mind/
+├── frontend/
+│   ├── app/
+│   ├── components/
+│   ├── lib/
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── next.config.js
+│   └── next-env.d.ts
+├── backend/
+│   └── app/
+│       ├── ai/
+│       │   ├── embeddings/
+│       │   ├── memory/
+│       │   ├── orchestration/
+│       │   ├── rag/
+│       │   └── vision/
+│       ├── routers/
+│       ├── services/
+│       ├── __init__.py
+│       ├── auth.py
+│       ├── config.py
+│       ├── crud.py
+│       ├── database.py
+│       ├── deps.py
+│       ├── main.py
+│       ├── models.py
+│       ├── schemas.py
+│       └── utils.py
+├── data/
+│   ├── docs/
+│   └── uploads/
+├── tests/
+├── .env.example
+├── .gitignore
+├── docker-compose.yml
+├── requirements.txt
+└── README.md
+```
+
+## Technology justification
+
+### Frontend
+
+- Next.js provides fast app routing, modern React patterns, and a good fit for a dashboard-style app.
+
+### Backend
+
+- FastAPI is lightweight, async-friendly, and ideal for AI APIs with typed schemas.
+
+### AI and retrieval
+
+- SentenceTransformers provides practical embedding generation without heavy infra.
+- FAISS offers lightweight vector search for a prototype.
+- SQLite is acceptable for a student project and easy to evolve into PostgreSQL.
+
+### Why not over-engineer?
+
+This project keeps the architecture modular so each component can be replaced later with stronger models or services.
+
+## Database schema
+
+```sql
+users (
+  id INTEGER PRIMARY KEY,
+  email TEXT UNIQUE,
+  hashed_password TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at DATETIME
+)
+
+conversations (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER,
+  title TEXT,
+  created_at DATETIME,
+  updated_at DATETIME
+)
+
+messages (
+  id INTEGER PRIMARY KEY,
+  conversation_id INTEGER,
+  role TEXT,
+  content TEXT,
+  image_path TEXT,
+  created_at DATETIME,
+  metadata TEXT
+)
+
+documents (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER,
+  filename TEXT,
+  file_type TEXT,
+  storage_path TEXT,
+  summary TEXT,
+  created_at DATETIME
+)
+
+source_records (
+  id INTEGER PRIMARY KEY,
+  conversation_id INTEGER,
+  source_type TEXT,
+  title TEXT,
+  url TEXT,
+  snippet TEXT,
+  created_at DATETIME
+)
+```
+
+## API design
+
+### Authentication
+
+- POST /api/auth/register
+- POST /api/auth/login
+- GET /api/auth/me
+
+### Chat and interaction
+
+- POST /api/chat/message
+- GET /api/chat/conversations
+- GET /api/chat/conversations/{id}
+
+### Image and vision
+
+- POST /api/images/analyze
+- POST /api/images/upload
+
+### Documents and retrieval
+
+- POST /api/documents/upload
+- GET /api/documents
+- POST /api/documents/search
+
+### Health and system checks
+
+- GET /health
+
+## AI pipeline
+
+```text
+Camera / image input
+→ Optional OCR and scene extraction
+→ Query understanding
+→ Context memory lookup
+→ Retrieval from documents or web
+→ LLM reasoning with grounded evidence
+→ Final answer + source attribution
+```
+
+## RAG pipeline
+
+```text
+Document ingestion
+→ text extraction
+→ cleaning
+→ chunking
+→ embedding generation
+→ FAISS vector index
+→ semantic retrieval
+→ context injection into LLM
+→ grounded final response
+```
+
+## Example interactions
+
+### Object identification
+
+- User: “What is this?”
+- System: “This appears to be a DSLR camera. It is a digital single-lens reflex camera used for photography.”
+
+### Follow-up context
+
+- User: “How does it work?”
+- System: “It captures light through a lens, focuses it on a sensor, and records it as an image.”
+
+### Product comparison
+
+- User: “Compare this laptop with Model X.”
+- System: “Based on the detected model and the retrieved specs, this device is similar in performance but differs in battery and thermal design.”
+
+### Document retrieval
+
+- User: “Search my uploaded documents for battery safety instructions.”
+- System: “I found relevant passages in the uploaded safety sheet and summarized them below.”
+
+## Security considerations
+
+- JWT-based authentication
+- Password hashing with bcrypt
+- Never expose API keys in frontend code
+- Validate uploaded file types
+- Limit image sizes and file sizes
+- Avoid unsafe or autonomous decisions in high-risk contexts
+- Never claim detected objects without adequate confidence or evidence
+
+## Testing strategy
+
+- Unit tests for auth and CRUD logic
+- API tests for chat and document endpoints
+- Vector search smoke tests
+- Image analysis fallback tests
+- RAG answer grounding checks
+
+## Deployment strategy
+
+- Run backend and frontend separately in containers
+- Use SQLite for prototype, PostgreSQL for production upgrade
+- Use reverse proxy and environment variables for deployment
+- Add rate limiting and request logging in production
+
+## Environment variables
+
+```env
+APP_NAME=Nexa Mind
+APP_ENV=development
+SECRET_KEY=replace-me-with-a-secure-secret
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+DATABASE_URL=sqlite:///./backend/app/nexa_mind.db
+BACKEND_CORS_ORIGINS=http://localhost:3000
+OPENAI_API_KEY=
+MODEL_NAME=gpt-4o-mini
+EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+```
+
+## Fast start
+
+### Backend
+
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r ../requirements.txt
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## Notes
+
+This project is intentionally designed as a realistic but practical prototype: modular enough for extension, simple enough to run locally, and grounded in the actual AI workflow described in the problem statement.
