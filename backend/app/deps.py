@@ -1,18 +1,20 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from typing import Generator
+
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-from app.config import ALGORITHM, SECRET_KEY
-from app.crud import get_user_by_email
+from app.config import SECRET_KEY, ALGORITHM
 from app.database import SessionLocal
+from app.models import User
+from app.crud import get_user_by_email, get_user
 
-router = APIRouter()
 security = HTTPBearer()
 
 
-def get_db():
+def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()
     try:
         yield db
@@ -23,7 +25,7 @@ def get_db():
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db),
-):
+) -> User:
     token = credentials.credentials
     try:
         import jwt
